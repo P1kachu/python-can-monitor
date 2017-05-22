@@ -104,10 +104,11 @@ def main(stdscr, bus_thread):
         if should_redraw.is_set():
             max_y, max_x = win.getmaxyx()
 
-            column_width = 50
+            column_width = 70
             id_column_start = 2
-            bytes_column_start = 13
-            text_column_start = 38
+            id_padding = 14
+            bytes_column_start = 15 + id_padding
+            text_column_start = 45 + id_padding
 
             # Compute row/column counts according to the window size and borders
             row_start = 3
@@ -148,7 +149,7 @@ def main(stdscr, bus_thread):
 
                     # print frame ID in decimal and hex
                     win.addstr(row, id_column_start + current_column * column_width, '%s' % str(frame_id).ljust(5))
-                    win.addstr(row, id_column_start + 5 + current_column * column_width, '%X'.ljust(5) % frame_id)
+                    win.addstr(row, id_column_start + id_padding + current_column * column_width, '%X'.ljust(5) % frame_id)
 
                     # print frame bytes
                     win.addstr(row, bytes_column_start + current_column * column_width, msg_bytes.ljust(23))
