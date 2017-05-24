@@ -148,8 +148,8 @@ def main(stdscr, bus_thread):
                             msg_str = msg_str + char
 
                     # print frame ID in decimal and hex
-                    win.addstr(row, id_column_start + current_column * column_width, '%s' % str(frame_id).ljust(5))
-                    win.addstr(row, id_column_start + id_padding + current_column * column_width, '%X'.ljust(5) % frame_id)
+                    #win.addstr(row, id_column_start + current_column * column_width, '%s' % str(frame_id).ljust(8))
+                    win.addstr(row, id_column_start + id_padding + current_column * column_width, '{:08x}'.format(frame_id))
 
                     # print frame bytes
                     win.addstr(row, bytes_column_start + current_column * column_width, msg_bytes.ljust(23))
