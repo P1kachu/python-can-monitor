@@ -21,7 +21,10 @@ thread_exception = None
 DELTA_TIME_TRIGGER = 0.01
 RESET_COLOR_COUNTER_VALUE = 20
 
-# MESSAGES TUPLE FORMAT
+# This whole script is hacky
+# Please protect your eyes with something less violent,
+# like... acid idk, if you are willing to read it anyway
+# MESSAGES TUPLE FORMAT (ANCHOR_TUPLE_FORMAT)
 FRAME_ID_NEW_MESSAGE = 0 # This frame ID sent a new message, so save it
 FRAME_ID_OLD_MESSAGE = 1 # Save the previous message also, to compare
 FRAME_ID_LAST_CHANGE = 2 # Time at which the last modification occured
@@ -75,11 +78,11 @@ def bus_run_loop(bus_device):
                     try:
                         can_messages[frame_id] = (data,
                                 can_messages[frame_id][FRAME_ID_NEW_MESSAGE], # New message becomes old message
-                                datetime.datetime.now(),
+                                (datetime.datetime.now() - can_messages[frame_id][FRAME_ID_LAST_CHANGE]).total_seconds(),
                                 True,
-                                can_messages[frame_id][FRAME_ID_COLOR_COUNTER] - 1)
+                                can_messages[frame_id][FRAME_ID_COLOR_COUNTER])
                     except Exception as e:
-                        can_messages[frame_id] = (data, data, datetime.datetime.now(), False, 0)
+                        can_messages[frame_id] = (data, data, 0, True, 0)
                     should_redraw.set()
             except Exception as e:
                 # Invalid frame
@@ -176,18 +179,21 @@ def main(stdscr, bus_thread):
                         color = True
 
                     if (can_messages[frame_id][FRAME_ID_MESSAGE_CHANGED]
-                        and (datetime.datetime.now() - can_messages[frame_id][FRAME_ID_LAST_CHANGE]).total_seconds() > DELTA_TIME_TRIGGER):
+                        and can_messages[frame_id][FRAME_ID_LAST_CHANGE] > DELTA_TIME_TRIGGER):
                         for i, b in enumerate(can_messages[frame_id][FRAME_ID_NEW_MESSAGE]):
                             if b != can_messages[frame_id][FRAME_ID_OLD_MESSAGE][i]:
                                 color = True
                                 update_color_counter = True
                                 break
 
-                    can_messages[frame_id] = (can_messages[frame_id][FRAME_ID_NEW_MESSAGE],
+                    try:
+                        can_messages[frame_id] = (can_messages[frame_id][FRAME_ID_NEW_MESSAGE],
                             can_messages[frame_id][FRAME_ID_OLD_MESSAGE],
-                            can_messages[frame_id][FRAME_ID_LAST_CHANGE],
+                            datetime.datetime.now() if color else datetime.datetime.now() + datetime.timedelta(seconds=can_messages[frame_id][FRAME_ID_LAST_CHANGE]),
                             False,
-                            RESET_COLOR_COUNTER_VALUE if update_color_counter else can_messages[frame_id][FRAME_ID_COLOR_COUNTER])
+                            RESET_COLOR_COUNTER_VALUE if update_color_counter else can_messages[frame_id][FRAME_ID_COLOR_COUNTER] - 1)
+                    except Exception as e:
+                        pass
 
                     win.addstr(row, id_column_start + id_padding + current_column * column_width, '{:08x}'.format(frame_id))
 
