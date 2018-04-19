@@ -82,7 +82,7 @@ def bus_run_loop(bus_device):
                                 True,
                                 can_messages[frame_id][FRAME_ID_COLOR_COUNTER])
                     except Exception as e:
-                        can_messages[frame_id] = (data, data, 0, True, 0)
+                        can_messages[frame_id] = (data, [0], DELTA_TIME_TRIGGER, True, 0)
                     should_redraw.set()
             except Exception as e:
                 # Invalid frame
@@ -179,12 +179,16 @@ def main(stdscr, bus_thread):
                         color = True
 
                     if (can_messages[frame_id][FRAME_ID_MESSAGE_CHANGED]
-                        and can_messages[frame_id][FRAME_ID_LAST_CHANGE] > DELTA_TIME_TRIGGER):
-                        for i, b in enumerate(can_messages[frame_id][FRAME_ID_NEW_MESSAGE]):
-                            if b != can_messages[frame_id][FRAME_ID_OLD_MESSAGE][i]:
-                                color = True
-                                update_color_counter = True
-                                break
+                        and can_messages[frame_id][FRAME_ID_LAST_CHANGE] >= DELTA_TIME_TRIGGER):
+                        if len(can_messages[frame_id][FRAME_ID_OLD_MESSAGE]) != len(can_messages[frame_id][FRAME_ID_NEW_MESSAGE]):
+                            color = True
+                            update_color_counter = True
+                        else:
+                            for i, b in enumerate(can_messages[frame_id][FRAME_ID_NEW_MESSAGE]):
+                                if b != can_messages[frame_id][FRAME_ID_OLD_MESSAGE][i]:
+                                    color = True
+                                    update_color_counter = True
+                                    break
 
                     try:
                         can_messages[frame_id] = (can_messages[frame_id][FRAME_ID_NEW_MESSAGE],
