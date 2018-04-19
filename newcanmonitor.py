@@ -19,6 +19,14 @@ can_messages_lock = threading.Lock()
 thread_exception = None
 
 DELTA_TIME_TRIGGER = 0.01
+RESET_COLOR_COUNTER_VALUE = 20
+
+# MESSAGES TUPLE FORMAT
+FRAME_ID_NEW_MESSAGE = 0 # This frame ID sent a new message, so save it
+FRAME_ID_OLD_MESSAGE = 1 # Save the previous message also, to compare
+FRAME_ID_LAST_CHANGE = 2 # Time at which the last modification occured
+FRAME_ID_MESSAGE_CHANGED = 3 # Did a new message appear after last refresh ?
+FRAME_ID_COLOR_COUNTER = 4 # How many iteration should we color the message for
 
 
 def read_bus(bus_device):
@@ -62,14 +70,16 @@ def bus_run_loop(bus_device):
                     continue
 
                 # Add the frame to the can_messages dict and tell the main thread to refresh its content
+                # See ANCHOR_TUPLE_FORMAT for information
                 with can_messages_lock:
                     try:
                         can_messages[frame_id] = (data,
-                                can_messages[frame_id][0],
+                                can_messages[frame_id][FRAME_ID_NEW_MESSAGE], # New message becomes old message
                                 datetime.datetime.now(),
-                                True)
+                                True,
+                                can_messages[frame_id][FRAME_ID_COLOR_COUNTER] - 1)
                     except Exception as e:
-                        can_messages[frame_id] = (data, data, datetime.datetime.now(), False)
+                        can_messages[frame_id] = (data, data, datetime.datetime.now(), False, 0)
                     should_redraw.set()
             except Exception as e:
                 # Invalid frame
@@ -140,7 +150,7 @@ def main(stdscr, bus_thread):
             # Make sure we don't read the can_messages dict while it's being written to in the serial thread
             with can_messages_lock:
                 for frame_id in sorted(can_messages.keys()):
-                    msg = can_messages[frame_id][0]
+                    msg = can_messages[frame_id][FRAME_ID_NEW_MESSAGE]
 
                     # convert the bytes array to an hex string (separated by spaces)
                     msg_bytes = ' '.join('%02X' % byte for byte in msg)
@@ -161,16 +171,23 @@ def main(stdscr, bus_thread):
                     # print frame ID in decimal and hex
                     #win.addstr(row, id_column_start + current_column * column_width, '%s' % str(frame_id).ljust(8))
                     color = False
-                    if (can_messages[frame_id][3]
-                        and (datetime.datetime.now() - can_messages[frame_id][2]).total_seconds() > DELTA_TIME_TRIGGER):
-                        for i, b in enumerate(can_messages[frame_id][0]):
-                            if b != can_messages[frame_id][1][i]:
+                    update_color_counter = False
+                    if can_messages[frame_id][FRAME_ID_COLOR_COUNTER] > 0:
+                        color = True
+
+                    if (can_messages[frame_id][FRAME_ID_MESSAGE_CHANGED]
+                        and (datetime.datetime.now() - can_messages[frame_id][FRAME_ID_LAST_CHANGE]).total_seconds() > DELTA_TIME_TRIGGER):
+                        for i, b in enumerate(can_messages[frame_id][FRAME_ID_NEW_MESSAGE]):
+                            if b != can_messages[frame_id][FRAME_ID_OLD_MESSAGE][i]:
                                 color = True
+                                update_color_counter = True
                                 break
-                    can_messages[frame_id] = (can_messages[frame_id][0],
-                            can_messages[frame_id][1],
-                            can_messages[frame_id][2],
-                            False)
+
+                    can_messages[frame_id] = (can_messages[frame_id][FRAME_ID_NEW_MESSAGE],
+                            can_messages[frame_id][FRAME_ID_OLD_MESSAGE],
+                            can_messages[frame_id][FRAME_ID_LAST_CHANGE],
+                            False,
+                            RESET_COLOR_COUNTER_VALUE if update_color_counter else can_messages[frame_id][FRAME_ID_COLOR_COUNTER])
 
                     win.addstr(row, id_column_start + id_padding + current_column * column_width, '{:08x}'.format(frame_id))
 
