@@ -188,7 +188,8 @@ def main(stdscr, bus_thread):
                         if can_messages[frame_id][FRAME_ID_COLOR_COUNTER] > 0:
                             color = COLOR_THREE
                     except Exception as e:
-                        win.addstr(42, text_column_start + current_column * column_width, "0:{0}".format(e))
+                        #win.addstr(42, text_column_start + current_column * column_width, "0:{0}".format(e))
+                        pass
 
                     try:
                         if (can_messages[frame_id][FRAME_ID_MESSAGE_CHANGED]
@@ -203,7 +204,8 @@ def main(stdscr, bus_thread):
                                         update_color_counter = True
                                         break
                     except Exception as e:
-                        win.addstr(43, text_column_start + current_column * column_width, "1:{0}".format(e))
+                        #win.addstr(43, text_column_start + current_column * column_width, "1:{0}".format(e))
+                        pass
 
                     try:
                         # new messages arrived
@@ -228,6 +230,7 @@ def main(stdscr, bus_thread):
 
                     # print frame text
                     win.addstr(row, text_column_start + current_column * column_width, msg_str.ljust(8))
+                    #win.addstr(row, text_column_start + 10 + current_column * column_width, "--- {0} - {1}{2}".format(can_messages[frame_id][FRAME_ID_LAST_CHANGE], can_messages[frame_id][FRAME_ID_COLOR_COUNTER], " " * 30))
 
                     row = row + 1
 
