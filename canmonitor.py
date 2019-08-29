@@ -16,7 +16,24 @@ can_messages = {}
 can_messages_lock = threading.Lock()
 
 thread_exception = None
+g_stdscr = None
 
+CLEAR_DICT_ARB_ID = 0x777
+CLEAR_DICT_DATA_LEN = 8
+CLEAR_DICT_DATA = [7, 7, 7, 7, 7, 7, 7, 7]
+
+def data_is_special_clear_frame(arb_id, data_len, data):
+    if arb_id != CLEAR_DICT_ARB_ID:
+        return False
+
+    if data_len != CLEAR_DICT_DATA_LEN:
+        return False
+
+    for i in range(CLEAR_DICT_DATA_LEN):
+        if CLEAR_DICT_DATA[i] != data[i]:
+            return False
+
+    return True
 
 def read_bus(bus_device):
     """Read data from `bus_device` until the next newline character."""
@@ -52,11 +69,20 @@ def bus_run_loop(bus_device):
 
                 data = [int(byte, 16) for byte in frame[3:]]  # convert the hex strings array to an integer array
                 data = [byte for byte in data if byte >= 0 and byte <= 255]  # sanity check
-    
-            
+
+
                 if len(data) != frame_length:
                     # Wrong frame length or invalid data
                     continue
+
+                # Clear the dictionnary if a special message is received
+                if data_is_special_clear_frame(frame_id, frame_length, data):
+                    with can_messages_lock:
+                        global can_messages
+                        can_messages = {}
+                        should_redraw.set()
+                        win = init_window(g_stdscr)
+                        continue
 
                 # Add the frame to the can_messages dict and tell the main thread to refresh its content
                 with can_messages_lock:
@@ -94,6 +120,8 @@ def main(stdscr, bus_thread):
     curses.noecho()
     curses.cbreak()
 
+    global g_stdscr
+    g_stdscr = stdscr
     # Set getch() to non-blocking
     stdscr.nodelay(True)
 

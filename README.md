@@ -26,9 +26,12 @@ Launch the script
 
 Press Q at any time to exit the script.
 
+Sending a special frame (right now, `777#0707070707070707`) will reset the screen
+
 ## Example
 
     ./canmonitor.py vcan0
 
 ![Screenshot](http://i.imgur.com/1nqCQKz.png)
+
 
