@@ -27,6 +27,8 @@ Launch the script
 Press Q at any time to exit the script.
 
 Sending a special frame (right now, `777#0707070707070707`) will reset the screen
+Adding arbitration ids to BLACKLIST or WHITELIST can allow you to select what
+you want and don't want to see when there are too many messages.
 
 ## Example
 

@@ -21,6 +21,8 @@ g_stdscr = None
 CLEAR_DICT_ARB_ID = 0x777
 CLEAR_DICT_DATA_LEN = 8
 CLEAR_DICT_DATA = [7, 7, 7, 7, 7, 7, 7, 7]
+BLACKLIST = []
+WHITELIST = []
 
 def data_is_special_clear_frame(arb_id, data_len, data):
     if arb_id != CLEAR_DICT_ARB_ID:
@@ -65,6 +67,12 @@ def bus_run_loop(bus_device):
 
             try:
                 frame_id = int(frame[1][3:])  # get the ID from the 'ID=246' string
+
+                if WHITELIST != [] and frame_id != CLEAR_DICT_ARB_ID and frame_id not in WHITELIST:
+                    continue
+                elif BLACKLIST != [] and frame_id != CLEAR_DICT_ARB_ID and frame_id in BLACKLIST:
+                    continue
+
                 frame_length = int(frame[2][4:])  # get the length from the 'LEN=8' string
 
                 data = [int(byte, 16) for byte in frame[3:]]  # convert the hex strings array to an integer array
@@ -89,6 +97,7 @@ def bus_run_loop(bus_device):
                     can_messages[frame_id] = data
                     should_redraw.set()
             except Exception as e:
+                print(e)
                 # Invalid frame
                 continue
     except:
